@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cupping Timer</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    :root {
+      --font-sans: system-ui, -apple-system, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', monospace;
+      --color-text-primary: #1a1a1a;
+      --color-text-secondary: #555;
+      --color-text-tertiary: #999;
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f5f5f4;
+      --color-border-tertiary: rgba(0,0,0,0.12);
+      --color-border-secondary: rgba(0,0,0,0.22);
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text-primary: #f0efed;
+        --color-text-secondary: #aaa;
+        --color-text-tertiary: #666;
+        --color-background-primary: #1c1c1a;
+        --color-background-secondary: #262624;
+        --color-border-tertiary: rgba(255,255,255,0.1);
+        --color-border-secondary: rgba(255,255,255,0.2);
+      }
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-background-secondary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .wrap {
+      width: 100%;
+      max-width: 600px;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      margin-bottom: 1.5rem;
+    }
+    .phase-clock {
+      text-align: center;
+      padding: 2rem 1rem;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      background: var(--color-background-primary);
+      margin-bottom: 1.5rem;
+    }
+    .big-time {
+      font-size: 56px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+    .phase-label {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      margin-top: 0.5rem;
+      min-height: 1.4em;
+    }
+    .next-up {
+      font-size: 13px;
+      color: var(--color-text-tertiary);
+      margin-top: 0.25rem;
+      min-height: 1.4em;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    button {
+      cursor: pointer;
+      padding: 8px 20px;
+      border-radius: var(--border-radius-md);
+      border: 0.5px solid var(--color-border-secondary);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      font-size: 14px;
+      font-family: var(--font-sans);
+    }
+    button:hover { background: var(--color-background-secondary); }
+    button:active { transform: scale(0.98); }
+    button.primary {
+      background: var(--color-text-primary);
+      color: var(--color-background-primary);
+      border-color: var(--color-text-primary);
+    }
+    button.primary:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.35; cursor: default; }
+    .step-list {
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .step-row {
+      display: grid;
+      grid-template-columns: 60px 1fr 36px;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+      background: var(--color-background-primary);
+      transition: background 0.2s;
+    }
+    .step-row:last-child { border-bottom: none; }
+    .step-row.active { background: var(--color-background-secondary); }
+    .step-row.done { opacity: 0.45; }
+    .step-time {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      font-family: var(--font-mono);
+    }
+    .step-name { font-size: 14px; color: var(--color-text-primary); }
+    .step-del {
+      background: none;
+      border: none;
+      color: var(--color-text-tertiary);
+      font-size: 16px;
+      padding: 2px 6px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .step-del:hover { background: var(--color-background-secondary); }
+    .add-step {
+      display: grid;
+      grid-template-columns: 70px 1fr auto;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+    .add-step input {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      padding: 8px 10px;
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      width: 100%;
+    }
+    .add-step input:focus { outline: none; box-shadow: 0 0 0 2px var(--color-border-secondary); }
+    .section-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+    .alert {
+      font-size: 14px;
+      color: var(--color-text-primary);
+      background: var(--color-background-secondary);
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-md);
+      padding: 10px 14px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .progress-bar {
+      height: 4px;
+      background: var(--color-border-tertiary);
+      border-radius: 2px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--color-text-primary);
+      border-radius: 2px;
+      transition: width 0.5s linear;
+      width: 0%;
+    }
+    .preset-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .preset-row button { font-size: 13px; color: var(--color-text-secondary); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Cupping timer</h2>
+
+  <div class="phase-clock" role="timer" aria-live="polite">
+    <div class="big-time" id="clock">00:00</div>
+    <div class="phase-label" id="phase-label">Ready to start</div>
+    <div class="next-up" id="next-up"></div>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+  <div class="controls">
+    <button class="primary" id="btn-start" onclick="startTimer()">Start</button>
+    <button id="btn-pause" onclick="pauseTimer()" disabled>Pause</button>
+    <button id="btn-reset" onclick="resetTimer()">Reset</button>
+    <button id="btn-speak" onclick="toggleSpeak()">Voice: on</button>
+    <button id="btn-beep" onclick="toggleBeep()">Alert: soft</button>
+  </div>
+
+  <div class="alert" id="alert"></div>
+
+  <p class="section-label">Protocol steps</p>
+  <div class="step-list" id="step-list"></div>
+
+  <p class="section-label" style="margin-top:1.5rem">Add step</p>
+  <div class="add-step">
+    <input type="text" id="new-time" placeholder="mm:ss" maxlength="5" />
+    <input type="text" id="new-name" placeholder="Step description" />
+    <button onclick="addStep()">Add</button>
+  </div>
+
+  <p class="section-label" style="margin-top:1.5rem">Presets</p>
+  <div class="preset-row">
+    <button onclick="loadSCA()">Load SCA protocol</button>
+    <button onclick="loadNordic()">Load Nordic light protocol</button>
+  </div>
+</div>
+
+<script>
+  let steps = [
+    { t: 0,   name: "Add water at 93 degrees — start timer" },
+    { t: 240, name: "Break crust — smell each cup" },
+    { t: 270, name: "Skim foam" },
+    { t: 600, name: "Begin cupping — first slurp" },
+    { t: 900, name: "Retronasal pass — final scoring" },
+  ];
+  let elapsed = 0, running = false, timer = null, speakOn = true, beepMode = 'soft';
+  let warned = new Set(), announced = new Set();
+  let audioCtx = null;
+
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playSingleBeep(freq1, freq2, gainVal, duration) {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq1, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freq2, ctx.currentTime + duration * 0.5);
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(gainVal, ctx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration + 0.02);
+  }
+
+  function playBeep() {
+    try {
+      if (beepMode === 'soft') {
+        playSingleBeep(880, 660, 0.4, 0.3);
+      } else {
+        // 3 sharp beeps, spaced 180ms apart
+        const ctx = getAudioCtx();
+        [0, 0.18, 0.36].forEach(offset => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(1046, ctx.currentTime + offset);
+          gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
+          gain.gain.exponentialRampToValueAtTime(0.7, ctx.currentTime + offset + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.12);
+          osc.start(ctx.currentTime + offset);
+          osc.stop(ctx.currentTime + offset + 0.14);
+        });
+      }
+    } catch (e) {}
+  }
+
+  function toggleBeep() {
+    beepMode = beepMode === 'soft' ? 'loud' : 'soft';
+    document.getElementById('btn-beep').textContent = 'Alert: ' + (beepMode === 'soft' ? 'soft' : 'loud');
+    playBeep();
+  }
+
+  function fmt(s) {
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function totalTime() {
+    return steps.length ? steps[steps.length - 1].t + 60 : 600;
+  }
+
+  function renderSteps() {
+    const list = document.getElementById('step-list');
+    if (!steps.length) {
+      list.innerHTML = '<div class="step-row"><span class="step-name" style="grid-column:1/-1;color:var(--color-text-tertiary)">No steps — add some below</span></div>';
+      return;
+    }
+    list.innerHTML = steps.map((s, i) => {
+      let cls = 'step-row';
+      if (elapsed >= s.t && (i === steps.length - 1 || elapsed < steps[i + 1].t)) cls += ' active';
+      else if (elapsed > s.t) cls += ' done';
+      return `<div class="${cls}"><span class="step-time">${fmt(s.t)}</span><span class="step-name">${s.name}</span><button class="step-del" onclick="delStep(${i})" aria-label="Remove step">×</button></div>`;
+    }).join('');
+  }
+
+  function delStep(i) {
+    if (!running) { steps.splice(i, 1); renderSteps(); }
+  }
+
+  function addStep() {
+    const tv = document.getElementById('new-time').value.trim();
+    const nv = document.getElementById('new-name').value.trim();
+    if (!nv) return;
+    let secs = 0;
+    if (tv.includes(':')) { const [m, s] = tv.split(':'); secs = parseInt(m) * 60 + (parseInt(s) || 0); }
+    else secs = parseInt(tv) || 0;
+    steps.push({ t: secs, name: nv });
+    steps.sort((a, b) => a.t - b.t);
+    document.getElementById('new-time').value = '';
+    document.getElementById('new-name').value = '';
+    renderSteps();
+  }
+
+  let voices = [];
+  function loadVoices() {
+    voices = speechSynthesis.getVoices();
+  }
+  if (window.speechSynthesis) {
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  function getVoice() {
+    const preferred = [
+      'Google US English',
+      'Microsoft David Desktop',
+      'Alex',
+      'Samantha',
+    ];
+    for (const name of preferred) {
+      const v = voices.find(v => v.name === name);
+      if (v) return v;
+    }
+    return voices.find(v => v.lang && v.lang.startsWith('en')) || voices[0] || null;
+  }
+
+  function speak(msg) {
+    if (!speakOn || !window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(msg);
+    u.rate = 0.92;
+    const v = getVoice();
+    if (v) u.voice = v;
+    else u.lang = 'en-US';
+    speechSynthesis.speak(u);
+  }
+
+  function toggleSpeak() {
+    speakOn = !speakOn;
+    document.getElementById('btn-speak').textContent = 'Voice: ' + (speakOn ? 'on' : 'off');
+  }
+
+  function flash(msg) {
+    const a = document.getElementById('alert');
+    a.textContent = msg; a.style.display = 'block';
+    clearTimeout(a._t); a._t = setTimeout(() => a.style.display = 'none', 4000);
+  }
+
+  function updateDisplay() {
+    document.getElementById('clock').textContent = fmt(elapsed);
+    const total = totalTime();
+    document.getElementById('progress').style.width = Math.min(100, elapsed / total * 100) + '%';
+    let current = 'Waiting for first step', next = '';
+    for (let i = 0; i < steps.length; i++) {
+      if (elapsed >= steps[i].t) {
+        current = steps[i].name;
+        next = i < steps.length - 1 ? 'Next: ' + steps[i + 1].name + ' at ' + fmt(steps[i + 1].t) : 'Final step';
+      }
+    }
+    document.getElementById('phase-label').textContent = current;
+    document.getElementById('next-up').textContent = next;
+    renderSteps();
+
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
+      const warnAt = s.t - 5;
+      if (elapsed === warnAt && warnAt >= 0 && !warned.has(s.t)) {
+        warned.add(s.t);
+        playBeep();
+      }
+      if (elapsed === s.t && !announced.has(s.t)) {
+        announced.add(s.t);
+        speak(s.name);
+        flash(s.name);
+      }
+    }
+  }
+
+  function unlockSpeech() {
+    if (!window.speechSynthesis) return;
+    loadVoices();
+    const u = new SpeechSynthesisUtterance('');
+    u.volume = 0;
+    const v = getVoice();
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  }
+
+  function startTimer() {
+    if (running) return;
+    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    unlockSpeech();
+    running = true;
+    document.getElementById('btn-start').disabled = true;
+    document.getElementById('btn-pause').disabled = false;
+    timer = setInterval(() => { elapsed++; updateDisplay(); }, 1000);
+    updateDisplay();
+  }
+
+  function pauseTimer() {
+    if (!running) return;
+    running = false; clearInterval(timer);
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('btn-pause').disabled = true;
+  }
+
+  function resetTimer() {
+    running = false; clearInterval(timer); elapsed = 0;
+    warned.clear(); announced.clear();
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('btn-pause').disabled = true;
+    document.getElementById('progress').style.width = '0%';
+    document.getElementById('clock').textContent = '00:00';
+    document.getElementById('phase-label').textContent = 'Ready to start';
+    document.getElementById('next-up').textContent = '';
+    document.getElementById('alert').style.display = 'none';
+    renderSteps();
+  }
+
+  function loadSCA() {
+    if (running) return;
+    steps = [
+      { t: 0,   name: "Add water at 93 degrees — start timer" },
+      { t: 240, name: "Break crust — smell each cup" },
+      { t: 270, name: "Skim foam and excess" },
+      { t: 600, name: "Begin cupping — first slurp" },
+      { t: 900, name: "Retronasal pass — finalize scores" },
+    ]; resetTimer();
+  }
+
+  function loadNordic() {
+    if (running) return;
+    steps = [
+      { t: 0,   name: "Add water at 88 degrees — Nordic light protocol" },
+      { t: 180, name: "First observation — aroma check" },
+      { t: 270, name: "Break crust gently" },
+      { t: 300, name: "Skim" },
+      { t: 480, name: "First slurp — brightness and acidity" },
+      { t: 660, name: "Second pass — sweetness and body" },
+      { t: 900, name: "Cooling pass — finish and aftertaste" },
+    ]; resetTimer();
+  }
+
+  renderSteps();
+</script>
+</body>
+</html>
